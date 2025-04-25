@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Voice Recorder - Master Dan</title>
+  <style>
+    body {
+      background: #121212;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    input[type="text"] {
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 30px;
+      outline: none;
+      margin-bottom: 30px;
+      width: 250px;
+      text-align: center;
+    }
+
+    #recordBtn {
+      background-color: #28a745; /* Green */
+      color: white;
+      font-size: 1.2rem;
+      padding: 20px 40px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #recordBtn.recording {
+      background-color: #dc3545; /* Red */
+    }
+
+    #recordBtn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .footer {
+      margin-top: 20px;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎙️ Master Dan's Recorder</h1>
+  <input type="text" id="filename" placeholder="Enter filename (e.g. april25-call)" />
+  <button id="recordBtn">Start Recording</button>
+  <div class="footer">Recording will auto-download after stop</div>
+
+  <script>
+    let mediaRecorder;
+    let chunks = [];
+    let isRecording = false;
+
+    const recordBtn = document.getElementById('recordBtn');
+    const filenameInput = document.getElementById('filename');
+
+    recordBtn.addEventListener('click', async () => {
+      if (!isRecording) {
+        const filename = filenameInput.value.trim();
+        if (!filename) {
+          alert("Enter a filename before recording, Master Dan!");
+          return;
+        }
+
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+
+          mediaRecorder.ondataavailable = e => {
+            chunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'audio/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${filename}.webm`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            chunks = [];
+          };
+
+          mediaRecorder.start();
+          isRecording = true;
+          recordBtn.textContent = "Stop Recording";
+          recordBtn.classList.add("recording");
+        } catch (err) {
+          console.error("Mic access denied or error:", err);
+          alert("Mic access is required to record.");
+        }
+
+      } else {
+        mediaRecorder.stop();
+        isRecording = false;
+        recordBtn.textContent = "Start Recording";
+        recordBtn.classList.remove("recording");
+      }
+    });
+  </script>
+</body>
+</html>
